@@ -34,9 +34,10 @@ class DDPG(agents.Agent):
         self.critic_updater = critic_updater or \
             updaters.DeterministicQLearning()
 
-    def initialize(self, observation_space, action_space, seed=None):
-        super().initialize(seed=seed)
+    def initialize(self, observation_space, action_space, device="cpu", seed=None):
+        super().initialize(seed=seed, device=device)
         self.model.initialize(observation_space, action_space)
+        self.model = self.model.to(device)
         self.replay.initialize(seed)
         self.exploration.initialize(self._policy, action_space, seed)
         self.actor_updater.initialize(self.model)
@@ -56,7 +57,7 @@ class DDPG(agents.Agent):
 
     def test_step(self, observations):
         # Greedy actions for testing.
-        return self._greedy_actions(observations).numpy()
+        return self._greedy_actions(observations).cpu().numpy()
 
     def update(self, observations, rewards, resets, terminations):
         # Store the last transitions in the replay.
@@ -83,7 +84,7 @@ class DDPG(agents.Agent):
             return self.model.actor(observations)
 
     def _policy(self, observations):
-        return self._greedy_actions(observations).numpy()
+        return self._greedy_actions(observations).cpu().numpy()
 
     def _update(self):
         keys = ('observations', 'actions', 'next_observations', 'rewards',
@@ -91,12 +92,12 @@ class DDPG(agents.Agent):
 
         # Update both the actor and the critic multiple times.
         for batch in self.replay.get(*keys):
-            batch = {k: torch.as_tensor(v) for k, v in batch.items()}
+            batch = {k: torch.as_tensor(v).to(self.device) if type(v[0]) is not dict else v for k, v in batch.items()}
             infos = self._update_actor_critic(**batch)
 
             for key in infos:
                 for k, v in infos[key].items():
-                    logger.store(key + '/' + k, v.numpy())
+                    logger.store(key + '/' + k, v.cpu().numpy())
 
         # Update the normalizers.
         if self.model.observation_normalizer:

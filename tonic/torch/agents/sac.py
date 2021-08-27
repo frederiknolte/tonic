@@ -30,9 +30,7 @@ class SAC(agents.DDPG):
         self, model=None, replay=None, exploration=None, actor_updater=None,
         critic_updater=None, device="cpu"
     ):
-        self.device = device
-        model = model or default_model(self.device)
-        model = model.to(self.device)
+        model = model or default_model(device)
         exploration = exploration or explorations.NoActionNoise()
         actor_updater = actor_updater or \
             updaters.TwinCriticSoftDeterministicPolicyGradient()
@@ -46,8 +44,11 @@ class SAC(agents.DDPG):
         with torch.no_grad():
             return self.model.actor(observations).sample()
 
+    def stochastic_actions(self, observations):
+        return self._stochastic_actions(observations).cpu().numpy()
+
     def _policy(self, observations):
-        return self._stochastic_actions(observations).numpy()
+        return self._stochastic_actions(observations).cpu().numpy()
 
     def _greedy_actions(self, observations):
         observations = torch.as_tensor(observations, dtype=torch.float32)

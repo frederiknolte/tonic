@@ -116,12 +116,13 @@ class DeterministicPolicyHead(torch.nn.Module):
 
 
 class Actor(torch.nn.Module):
-    def __init__(self, device, encoder, torso, head):
+    def __init__(self, device, encoder, torso, head, push_input_to_device=True):
         super().__init__()
         self.device = device
         self.encoder = encoder
         self.torso = torso
         self.head = head
+        self.push_input_to_device = push_input_to_device
 
     def initialize(
         self, observation_space, action_space, observation_normalizer=None
@@ -132,8 +133,10 @@ class Actor(torch.nn.Module):
         action_size = action_space.shape[0]
         self.head.initialize(size, action_size)
 
-    def forward(self, inputs):
-        inputs = inputs.to(self.device)
-        out = self.encoder(inputs)
+    def forward(self, *inputs):
+        if self.push_input_to_device:
+            out = self.encoder(*[i.to(self.device) for i in inputs])
+        else:
+            out = self.encoder(*inputs)
         out = self.torso(out)
         return self.head(out)
