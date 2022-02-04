@@ -16,7 +16,8 @@ class MeanStd(torch.nn.Module):
         if shape:
             self.initialize(shape)
 
-    def initialize(self, shape):
+    def initialize(self, observation_space):
+        shape = observation_space.shape
         if isinstance(self.mean, (int, float)):
             self.mean = np.full(shape, self.mean, np.float32)
         else:
