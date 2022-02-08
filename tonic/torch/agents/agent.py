@@ -8,8 +8,7 @@ from tonic import agents, logger  # noqa
 
 
 class Agent(agents.Agent):
-    def initialize(self, seed=None, device="cpu"):
-        self.device = device
+    def initialize(self, seed=None):
         if seed is not None:
             np.random.seed(seed)
             random.seed(seed)

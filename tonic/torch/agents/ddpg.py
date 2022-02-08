@@ -45,7 +45,7 @@ class DDPG(agents.Agent):
         self.steps = 0
 
     def step(self, observations):
-
+        
         # Keep some values for the next update.
         self.last_observations = copy.deepcopy(observations)
 

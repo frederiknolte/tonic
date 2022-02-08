@@ -4,15 +4,13 @@ from tonic import logger, replays  # noqa
 from tonic.torch import agents, models, normalizers, updaters
 
 
-def default_model(device):
+def default_model():
     return models.ActorCriticWithTargets(
         actor=models.Actor(
-            device=device,
             encoder=models.ObservationEncoder(),
             torso=models.MLP((256, 256), torch.nn.ReLU),
             head=models.GaussianPolicyHead()),
         critic=models.Critic(
-            device=device,
             encoder=models.ObservationActionEncoder(),
             torso=models.MLP((256, 256), torch.nn.ReLU),
             head=models.ValueHead()),
@@ -26,25 +24,24 @@ class MPO(agents.Agent):
     '''
 
     def __init__(
-        self, model=None, replay=None, actor_updater=None, critic_updater=None, device="cpu"
+        self, model=None, replay=None, actor_updater=None, critic_updater=None
     ):
-        self.model = model or default_model(device)
+        self.model = model or default_model()
         self.replay = replay or replays.Buffer(num_steps=5)
         self.actor_updater = actor_updater or \
             updaters.MaximumAPosterioriPolicyOptimization()
         self.critic_updater = critic_updater or updaters.ExpectedSARSA()
 
-    def initialize(self, observation_space, action_space, device="cpu", seed=None):
-        super().initialize(seed=seed, device=device)
+    def initialize(self, observation_space, action_space, seed=None):
+        super().initialize(seed=seed)
         self.model.initialize(observation_space, action_space)
-        self.model = self.model.to(device)
         self.replay.initialize(seed)
         self.actor_updater.initialize(self.model, action_space)
         self.critic_updater.initialize(self.model)
 
     def step(self, observations):
         actions = self._step(observations)
-        actions = actions.cpu().numpy()
+        actions = actions.numpy()
 
         # Keep some values for the next update.
         self.last_observations = observations.copy()
@@ -54,7 +51,7 @@ class MPO(agents.Agent):
 
     def test_step(self, observations):
         # Sample actions for testing.
-        return self._test_step(observations).cpu().numpy()
+        return self._test_step(observations).numpy()
 
     def update(self, observations, rewards, resets, terminations):
         # Store the last transitions in the replay.
@@ -74,12 +71,12 @@ class MPO(agents.Agent):
             self._update()
 
     def _step(self, observations):
-        observations = torch.as_tensor(observations, dtype=torch.float32).to(self.device)
+        observations = torch.as_tensor(observations, dtype=torch.float32)
         with torch.no_grad():
             return self.model.actor(observations).sample()
 
     def _test_step(self, observations):
-        observations = torch.as_tensor(observations, dtype=torch.float32).to(self.device)
+        observations = torch.as_tensor(observations, dtype=torch.float32)
         with torch.no_grad():
             return self.model.actor(observations).loc
 
@@ -89,12 +86,12 @@ class MPO(agents.Agent):
 
         # Update both the actor and the critic multiple times.
         for batch in self.replay.get(*keys):
-            batch = {k: torch.as_tensor(v).to(self.device) for k, v in batch.items()}
+            batch = {k: torch.as_tensor(v) for k, v in batch.items()}
             infos = self._update_actor_critic(**batch)
 
             for key in infos:
                 for k, v in infos[key].items():
-                    logger.store(key + '/' + k, v.cpu().numpy())
+                    logger.store(key + '/' + k, v.numpy())
 
         # Update the normalizers.
         if self.model.observation_normalizer:
