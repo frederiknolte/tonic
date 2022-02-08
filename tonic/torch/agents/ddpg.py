@@ -91,7 +91,7 @@ class DDPG(agents.Agent):
 
         # Update both the actor and the critic multiple times.
         for batch in self.replay.get(*keys):
-            batch = {k: torch.as_tensor(v) for k, v in batch.items()}
+            # batch = {k: torch.as_tensor(v) for k, v in batch.items()}
             infos = self._update_actor_critic(**batch)
 
             for key in infos:

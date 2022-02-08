@@ -38,7 +38,6 @@ class SAC(agents.DDPG):
             actor_updater=actor_updater, critic_updater=critic_updater)
 
     def _stochastic_actions(self, observations):
-        observations = torch.as_tensor(observations, dtype=torch.float32)
         with torch.no_grad():
             return self.model.actor(observations).sample()
 
@@ -46,6 +45,5 @@ class SAC(agents.DDPG):
         return self._stochastic_actions(observations).numpy()
 
     def _greedy_actions(self, observations):
-        observations = torch.as_tensor(observations, dtype=torch.float32)
         with torch.no_grad():
             return self.model.actor(observations).loc
