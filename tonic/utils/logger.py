@@ -200,6 +200,11 @@ def initialize(*args, **kwargs):
     return current_logger
 
 
+def set_current_logger(logger):
+    global current_logger
+    current_logger = logger
+
+
 def get_current_logger():
     global current_logger
     if current_logger is None:
