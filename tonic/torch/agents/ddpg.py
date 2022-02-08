@@ -1,3 +1,4 @@
+import copy
 import torch
 
 from tonic import explorations, logger, replays  # noqa
@@ -44,11 +45,14 @@ class DDPG(agents.Agent):
         self.steps = 0
 
     def step(self, observations):
+
+        # Keep some values for the next update.
+        self.last_observations = copy.deepcopy(observations)
+
         # Get actions from the actor and exploration method.
         actions = self.exploration(observations, self.steps)
 
         # Keep some values for the next update.
-        self.last_observations = observations.copy()
         self.last_actions = actions.copy()
         self.steps += len(observations)
 
@@ -78,7 +82,6 @@ class DDPG(agents.Agent):
         self.exploration.update(resets)
 
     def _greedy_actions(self, observations):
-        observations = torch.as_tensor(observations, dtype=torch.float32)
         with torch.no_grad():
             return self.model.actor(observations)
 
