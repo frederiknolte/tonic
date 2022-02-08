@@ -158,7 +158,7 @@ class Parallel:
 def distribute(environment_builder, worker_groups=1, workers_per_group=1):
     '''Distributes workers over parallel and sequential groups.'''
     dummy_environmentironment = environment_builder()
-    max_episode_steps = dummy_environmentironment.max_episode_steps
+    max_episode_steps = dummy_environmentironment.max_episode_steps if hasattr(dummy_environmentironment, 'max_episode_steps') else dummy_environmentironment.num_steps
     del dummy_environmentironment
 
     if worker_groups < 2:
