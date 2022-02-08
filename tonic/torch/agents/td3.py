@@ -4,13 +4,15 @@ from tonic import logger  # noqa
 from tonic.torch import agents, models, normalizers, updaters
 
 
-def default_model():
+def default_model(device):
     return models.ActorTwinCriticWithTargets(
         actor=models.Actor(
+            device=device,
             encoder=models.ObservationEncoder(),
             torso=models.MLP((256, 256), torch.nn.ReLU),
             head=models.DeterministicPolicyHead()),
         critic=models.Critic(
+            device=device,
             encoder=models.ObservationActionEncoder(),
             torso=models.MLP((256, 256), torch.nn.ReLU),
             head=models.ValueHead()),
@@ -24,9 +26,9 @@ class TD3(agents.DDPG):
 
     def __init__(
         self, model=None, replay=None, exploration=None, actor_updater=None,
-        critic_updater=None, delay_steps=2
+        critic_updater=None, delay_steps=2, device="cpu"
     ):
-        model = model or default_model()
+        model = model or default_model(device)
         critic_updater = critic_updater or \
             updaters.TwinCriticDeterministicQLearning()
         super().__init__(
@@ -39,14 +41,14 @@ class TD3(agents.DDPG):
         keys = ('observations', 'actions', 'next_observations', 'rewards',
                 'discounts')
         for i, batch in enumerate(self.replay.get(*keys)):
-            batch = {k: torch.as_tensor(v) for k, v in batch.items()}
+            batch = {k: torch.as_tensor(v).to(self.device) for k, v in batch.items()}
             if (i + 1) % self.delay_steps == 0:
                 infos = self._update_actor_critic(**batch)
             else:
                 infos = dict(critic=self.critic_updater(**batch))
             for key in infos:
                 for k, v in infos[key].items():
-                    logger.store(key + '/' + k, v.numpy())
+                    logger.store(key + '/' + k, v.cpu().numpy())
 
         # Update the normalizers.
         if self.model.observation_normalizer:

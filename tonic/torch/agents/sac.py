@@ -4,15 +4,17 @@ from tonic import explorations  # noqa
 from tonic.torch import agents, models, normalizers, updaters
 
 
-def default_model():
+def default_model(device):
     return models.ActorTwinCriticWithTargets(
         actor=models.Actor(
+            device=device,
             encoder=models.ObservationEncoder(),
             torso=models.MLP((256, 256), torch.nn.ReLU),
             head=models.GaussianPolicyHead(
                 loc_activation=torch.nn.Identity,
                 distribution=models.SquashedMultivariateNormalDiag)),
         critic=models.Critic(
+            device=device,
             encoder=models.ObservationActionEncoder(),
             torso=models.MLP((256, 256), torch.nn.ReLU),
             head=models.ValueHead()),
@@ -26,9 +28,9 @@ class SAC(agents.DDPG):
 
     def __init__(
         self, model=None, replay=None, exploration=None, actor_updater=None,
-        critic_updater=None
+        critic_updater=None, device="cpu"
     ):
-        model = model or default_model()
+        model = model or default_model(device)
         exploration = exploration or explorations.NoActionNoise()
         actor_updater = actor_updater or \
             updaters.TwinCriticSoftDeterministicPolicyGradient()
@@ -40,6 +42,9 @@ class SAC(agents.DDPG):
     def _stochastic_actions(self, observations):
         with torch.no_grad():
             return self.model.actor(observations).sample()
+
+    def stochastic_actions(self, observations):
+        return self._stochastic_actions(observations).cpu().numpy()
 
     def _policy(self, observations):
         return self._stochastic_actions(observations).cpu().numpy()

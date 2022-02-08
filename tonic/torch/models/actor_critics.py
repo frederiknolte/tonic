@@ -92,21 +92,21 @@ class ActorTwinCriticWithTargets(torch.nn.Module):
         if self.observation_normalizer:
             self.observation_normalizer.initialize(observation_space)
         self.actor.initialize(
-            observation_space, action_space, self.observation_normalizer)
+            observation_space, action_space=action_space, observation_normalizer=self.observation_normalizer)
         self.critic_1.initialize(
-            observation_space, action_space, self.observation_normalizer,
-            self.return_normalizer)
+            observation_space, action_space=action_space, observation_normalizer=self.observation_normalizer,
+            return_normalizer=self.return_normalizer)
         self.critic_2.initialize(
-            observation_space, action_space, self.observation_normalizer,
-            self.return_normalizer)
+            observation_space, action_space=action_space, observation_normalizer=self.observation_normalizer,
+            return_normalizer=self.return_normalizer)
         self.target_actor.initialize(
-            observation_space, action_space, self.observation_normalizer)
+            observation_space, action_space=action_space, observation_normalizer=self.observation_normalizer)
         self.target_critic_1.initialize(
-            observation_space, action_space, self.observation_normalizer,
-            self.return_normalizer)
+            observation_space, action_space=action_space, observation_normalizer=self.observation_normalizer,
+            return_normalizer=self.return_normalizer)
         self.target_critic_2.initialize(
-            observation_space, action_space, self.observation_normalizer,
-            self.return_normalizer)
+            observation_space, action_space=action_space, observation_normalizer=self.observation_normalizer,
+            return_normalizer=self.return_normalizer)
         self.online_variables = models.trainable_variables(self.actor)
         self.online_variables += models.trainable_variables(self.critic_1)
         self.online_variables += models.trainable_variables(self.critic_2)
