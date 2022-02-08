@@ -42,7 +42,7 @@ class SAC(agents.DDPG):
             return self.model.actor(observations).sample()
 
     def _policy(self, observations):
-        return self._stochastic_actions(observations).numpy()
+        return self._stochastic_actions(observations).cpu().numpy()
 
     def _greedy_actions(self, observations):
         with torch.no_grad():
