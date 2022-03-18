@@ -31,9 +31,10 @@ class Sequential:
         resets = []
         terminations = []
         observations = []  # Observations for the actions selection.
+        env_infos = []
 
         for i in range(len(self.environments)):
-            ob, rew, term, _ = self.environments[i].step(actions[i])
+            ob, rew, term, env_info = self.environments[i].step(actions[i])
 
             self.lengths[i] += 1
             # Timeouts trigger resets but are not true terminations.
@@ -42,6 +43,7 @@ class Sequential:
             rewards.append(rew)
             resets.append(reset)
             terminations.append(term)
+            env_infos.append(env_info)
 
             if reset:
                 ob = self.environments[i].reset()
@@ -50,11 +52,13 @@ class Sequential:
             observations.append(ob)
 
         observations = observations
+        env_infos = {k: [d[k] for d in env_infos] for k in env_infos[0].keys()}
         infos = dict(
             observations=next_observations,
             rewards=np.array(rewards, np.float32),
             resets=np.array(resets, np.bool),
-            terminations=np.array(terminations, np.bool))
+            terminations=np.array(terminations, np.bool),
+            env_infos=env_infos)
         return observations, infos
 
     def render(self, mode='human', *args, **kwargs):
@@ -138,6 +142,7 @@ class Parallel:
         for actions, pipe in zip(actions_list, self.action_pipes):
             pipe.send(actions)
 
+        env_infos = list(range(self.worker_groups))
         for _ in range(self.worker_groups):
             index, (observations, infos) = self.output_queue.get()
             self.observations_list[index] = observations
@@ -145,21 +150,24 @@ class Parallel:
             self.rewards_list[index] = infos['rewards']
             self.resets_list[index] = infos['resets']
             self.terminations_list[index] = infos['terminations']
+            env_infos[index] = infos['env_infos']
 
         observations = np.concatenate(self.observations_list)
+        env_infos = {k: np.array([d[k] for d in env_infos]).squeeze() for k in env_infos[0].keys()}
         infos = dict(
             observations=np.concatenate(self.next_observations_list),
             rewards=np.concatenate(self.rewards_list),
             resets=np.concatenate(self.resets_list),
-            terminations=np.concatenate(self.terminations_list))
+            terminations=np.concatenate(self.terminations_list),
+            env_infos=env_infos)
         return observations, infos
 
 
-def distribute(environment_builder, worker_groups=1, workers_per_group=1):
+def distribute(environment_builder, worker_groups=1, workers_per_group=1, max_episode_steps=1000):
     '''Distributes workers over parallel and sequential groups.'''
-    dummy_environmentironment = environment_builder()
-    max_episode_steps = dummy_environmentironment.max_episode_steps if hasattr(dummy_environmentironment, 'max_episode_steps') else dummy_environmentironment.num_steps
-    del dummy_environmentironment
+    dummy_environment = environment_builder()
+    max_episode_steps = max_episode_steps if max_episode_steps is not None else dummy_environment.max_episode_steps
+    del dummy_environment
 
     if worker_groups < 2:
         return Sequential(
