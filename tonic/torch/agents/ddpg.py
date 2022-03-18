@@ -47,7 +47,7 @@ class DDPG(agents.Agent):
     def step(self, observations):
         
         # Keep some values for the next update.
-        self.last_observations = copy.deepcopy(observations)
+        self.last_observations = observations  # TODO copy.deepcopy(observations)
 
         # Get actions from the actor and exploration method.
         actions = self.exploration(observations, self.steps)
@@ -60,7 +60,7 @@ class DDPG(agents.Agent):
 
     def test_step(self, observations):
         # Greedy actions for testing.
-        return self._greedy_actions(observations).numpy()
+        return self._greedy_actions(observations).cpu().numpy()
 
     def update(self, observations, rewards, resets, terminations, **kwargs):
         # Store the last transitions in the replay.
@@ -99,7 +99,7 @@ class DDPG(agents.Agent):
 
             for key in infos:
                 for k, v in infos[key].items():
-                    logger.store(key + '/' + k, v.numpy())
+                    logger.store(key + '/' + k, v.cpu().numpy())
 
         # Update the normalizers.
         if self.model.observation_normalizer:
