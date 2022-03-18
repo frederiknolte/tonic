@@ -4,7 +4,7 @@ import numpy as np
 
 
 class NoActionNoise:
-    def __init__(self, start_steps=20000):
+    def __init__(self, start_steps=5000):
         self.start_steps = start_steps
 
     def initialize(self, policy, action_space, seed=None):
