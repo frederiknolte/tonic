@@ -2,7 +2,7 @@ import torch
 
 
 class MLP(torch.nn.Module):
-    def __init__(self, sizes, activation, fn=None):
+    def __init__(self, sizes, activation=torch.nn.ReLU, fn=None, **kwargs):
         super().__init__()
         self.sizes = sizes
         self.activation = activation
