@@ -90,7 +90,7 @@ class OrnsteinUhlenbeck(agents.Agent):
         next_actions = np.clip(next_actions, -1, 1)
         return next_actions
 
-    def update(self, observations, rewards, resets, terminations):
+    def update(self, observations, rewards, resets, terminations, **kwargs):
         self.train_actions *= (1. - resets)[:, None]
 
     def test_update(self, observations, rewards, resets, terminations):
