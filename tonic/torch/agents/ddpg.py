@@ -86,7 +86,7 @@ class DDPG(agents.Agent):
             return self.model.actor(observations)
 
     def _policy(self, observations):
-        return self._greedy_actions(observations).numpy()
+        return self._greedy_actions(observations).cpu().numpy()
 
     def _update(self):
         keys = ('observations', 'actions', 'next_observations', 'rewards',

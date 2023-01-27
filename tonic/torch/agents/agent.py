@@ -24,3 +24,7 @@ class Agent(agents.Agent):
         path = path + '.pt'
         logger.log(f'Loading weights from {path}')
         self.model.load_state_dict(torch.load(path))
+
+    def to(self, device):
+        self.model = self.model.to(device)
+        self.replay.set_device(device)

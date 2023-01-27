@@ -1,4 +1,5 @@
 import numpy as np
+import torch
 
 
 class Buffer:
@@ -17,6 +18,7 @@ class Buffer:
         self.discount_factor = discount_factor
         self.steps_before_batches = steps_before_batches
         self.steps_between_batches = steps_between_batches
+        self.device = 'cpu'
 
     def initialize(self, seed=None):
         self.np_random = np.random.RandomState(seed)
@@ -29,6 +31,9 @@ class Buffer:
         if self.steps < self.steps_before_batches:
             return False
         return self.steps % self.steps_between_batches == 0
+
+    def set_device(self, device):
+        self.device = device
 
     def store(self, **kwargs):
         if 'terminations' in kwargs:
@@ -86,4 +91,4 @@ class Buffer:
             indices = self.np_random.randint(total_size, size=self.batch_size)
             rows = indices // self.num_workers
             columns = indices % self.num_workers
-            yield {k: self.buffers[k][rows, columns] for k in keys}
+            yield {k: torch.from_numpy(self.buffers[k][rows, columns]).to(self.device) for k in keys}

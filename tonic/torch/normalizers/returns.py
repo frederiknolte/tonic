@@ -7,8 +7,8 @@ class Return(torch.nn.Module):
         super().__init__()
         assert 0 <= discount_factor < 1
         self.coefficient = 1 / (1 - discount_factor)
-        self.min_reward = np.float32(-1)
-        self.max_reward = np.float32(1)
+        self.min_reward = torch.tensor([-1.])
+        self.max_reward = torch.tensor([1.])
         self._low = torch.nn.Parameter(torch.as_tensor(
             self.coefficient * self.min_reward, dtype=torch.float32),
             requires_grad=False)
@@ -23,9 +23,9 @@ class Return(torch.nn.Module):
     def record(self, values):
         for val in values:
             if val < self.min_reward:
-                self.min_reward = np.float32(val)
+                self.min_reward = val.float()
             elif val > self.max_reward:
-                self.max_reward = np.float32(val)
+                self.max_reward = val.float()
 
     def update(self):
         self._update(self.min_reward, self.max_reward)

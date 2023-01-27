@@ -19,14 +19,14 @@ class MeanStd(torch.nn.Module):
     def initialize(self, observation_space):
         shape = observation_space.shape
         if isinstance(self.mean, (int, float)):
-            self.mean = np.full(shape, self.mean, np.float32)
+            self.mean = torch.full(shape, self.mean, torch.float32)
         else:
-            self.mean = np.array(self.mean, np.float32)
+            self.mean = torch.tensor(self.mean, torch.float32)
         if isinstance(self.std, (int, float)):
-            self.std = np.full(shape, self.std, np.float32)
+            self.std = torch.full(shape, self.std, torch.float32)
         else:
-            self.std = np.array(self.std, np.float32)
-        self.mean_sq = np.square(self.mean)
+            self.std = torch.tensor(self.std, torch.float32)
+        self.mean_sq = torch.square(self.mean)
         self._mean = torch.nn.Parameter(torch.as_tensor(
             self.mean, dtype=torch.float32), requires_grad=False)
         self._std = torch.nn.Parameter(torch.as_tensor(
@@ -45,7 +45,7 @@ class MeanStd(torch.nn.Module):
     def record(self, values):
         for val in values:
             self.new_sum += val
-            self.new_sum_sq += np.square(val)
+            self.new_sum_sq += torch.square(val)
             self.new_count += 1
 
     def update(self):
@@ -61,12 +61,12 @@ class MeanStd(torch.nn.Module):
         self.new_count = 0
         self.new_sum = 0
         self.new_sum_sq = 0
-        self._update(self.mean.astype(np.float32), self.std.astype(np.float32))
+        self._update(self.mean.float(), self.std.float())
 
     def _compute_std(self, mean, mean_sq):
-        var = mean_sq - np.square(mean)
+        var = mean_sq - torch.square(mean)
         var = np.maximum(var, 0)
-        std = np.sqrt(var)
+        std = torch.sqrt(var)
         std = np.maximum(std, self.eps)
         return std
 

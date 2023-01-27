@@ -20,10 +20,10 @@ class TRPO(agents.A2C):
     def step(self, observations):
         # Sample actions and get their log-probabilities for training.
         actions, log_probs, locs, scales = self._step(observations)
-        actions = actions.numpy()
-        log_probs = log_probs.numpy()
-        locs = locs.numpy()
-        scales = scales.numpy()
+        actions = actions.cpu().numpy()
+        log_probs = log_probs.cpu().numpy()
+        locs = locs.cpu().numpy()
+        scales = scales.cpu().numpy()
 
         # Keep some values for the next update.
         self.last_observations = observations.copy()
@@ -70,7 +70,7 @@ class TRPO(agents.A2C):
         # Compute the lambda-returns.
         batch = self.replay.get_full('observations', 'next_observations')
         values, next_values = self._evaluate(**batch)
-        values, next_values = values.numpy(), next_values.numpy()
+        values, next_values = values.cpu().numpy(), next_values.cpu().numpy()
         self.replay.compute_returns(values, next_values)
 
         keys = ('observations', 'actions', 'log_probs', 'locs', 'scales',
@@ -79,7 +79,7 @@ class TRPO(agents.A2C):
         batch = {k: torch.as_tensor(v) for k, v in batch.items()}
         infos = self.actor_updater(**batch)
         for k, v in infos.items():
-            logger.store('actor/' + k, v.numpy())
+            logger.store('actor/' + k, v.cpu().numpy())
 
         critic_iterations = 0
         for batch in self.replay.get('observations', 'returns'):
@@ -87,7 +87,7 @@ class TRPO(agents.A2C):
             infos = self.critic_updater(**batch)
             critic_iterations += 1
             for k, v in infos.items():
-                logger.store('critic/' + k, v.numpy())
+                logger.store('critic/' + k, v.cpu().numpy())
         logger.store('critic/iterations', critic_iterations)
 
         # Update the normalizers.

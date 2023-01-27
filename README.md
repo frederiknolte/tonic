@@ -6,6 +6,17 @@
 
 Welcome to the Tonic RL library!
 
+---
+## Now with GPU support (for PyTorch)
+After initialising the agent, you can call:
+```python
+agent.to(device)
+```
+This will push the agent's model as well as samples from the replay buffer to the GPU.
+
+---
+
+
 Please take a look at [the paper](https://arxiv.org/abs/2011.07537) for details
 and results.
 

@@ -15,6 +15,7 @@ class Segment:
         self.batch_size = batch_size
         self.discount_factor = discount_factor
         self.trace_decay = trace_decay
+        self.device = 'cpu'
 
     def initialize(self, seed=None):
         self.np_random = np.random.RandomState(seed)
@@ -23,6 +24,9 @@ class Segment:
 
     def ready(self):
         return self.index == self.max_size
+
+    def set_device(self, device):
+        self.device = device
 
     def store(self, **kwargs):
         if self.buffers is None:
@@ -45,7 +49,7 @@ class Segment:
                 advs = (advs - advs.mean()) / std
             self.buffers['advantages'] = advs
 
-        return {k: replays.flatten_batch(self.buffers[k]) for k in keys}
+        return {k: torch.from_numpy(replays.flatten_batch(self.buffers[k])).to(self.device) for k in keys}
 
     def get(self, *keys):
         '''Get mini-batches from named buffers.'''
